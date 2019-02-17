@@ -1,0 +1,212 @@
+<?php
+
+$agendamento = new Agendamento();
+$agendaController = new AgendaController();
+$categoriacontroller = new CategoriaController();
+$pagamentoController = new TipoPagamentoController();
+$helper = new Helper();
+$resultado = "";
+
+
+
+$btnAtualizar = filter_input(INPUT_POST, 'btnAtualizar', FILTER_SANITIZE_STRING);
+if ($btnAtualizar) :
+    $cod = filter_input(INPUT_GET,'cod',FILTER_VALIDATE_INT);
+    $agendamento->setAgenda_cod(filter_input(INPUT_GET, 'cod', FILTER_SANITIZE_NUMBER_INT));    
+    $agendamento->setAgenda_nome(filter_input(INPUT_POST, 'nome', FILTER_SANITIZE_STRING));
+    $url = Helper::Name($agendamento->getAgenda_nome());
+    $agendamento->setAgenda_email(filter_input(INPUT_POST, 'email', FILTER_SANITIZE_STRING));
+    $agendamento->setCategoria(filter_input(INPUT_POST, 'especialidade', FILTER_SANITIZE_STRING));
+    $agendamento->setTipopagamento(filter_input(INPUT_POST, 'pagamento', FILTER_SANITIZE_STRING));
+    $agendamento->setAgenda_telefone(filter_input(INPUT_POST, 'telefone', FILTER_SANITIZE_STRING));    
+    $agendamento->setAgenda_Data(date("Y-m-d"));
+    $agendamento->setAgenda_hora(filter_input(INPUT_POST, 'hora', FILTER_SANITIZE_STRING));
+    
+    if ($agendaController->Atualizar($agendamento)):
+        $insertGoTo = '?pagina=listarAgendamento';
+        header("refresh:2;url={$insertGoTo}");
+        $resultado = '<div class="alert alert-info">
+                <button type="button" aria-hidden="true" class="close">×</button>
+                <span><b> Atualizado com sucesso - </b></span>
+            </div>';
+    else:
+        $resultado = '<div class="alert alert-danger">
+                <button type="button" aria-hidden="true" class="close">×</button>
+                <span><b> Erro ao atualizar, tente mais tarde - </b></span>
+            </div>';
+    endif;
+endif;
+
+//RETORNAR DADOS PARA ATUALIZAR
+$cod = filter_input(INPUT_GET, 'cod', FILTER_SANITIZE_NUMBER_INT);
+$retornotabela = $agendaController->retornoAgendamentoCod($cod);
+if ($retornotabela == NULL):
+    
+else:
+    $cod = $retornotabela->getAgenda_cod();
+    $nome = $retornotabela->getAgenda_nome();
+    $email = $retornotabela->getAgenda_email();
+    $telefone = $retornotabela->getAgenda_telefone();
+    $data = $retornotabela->getAgenda_data();
+    $hora = $retornotabela->getAgenda_hora();
+    $catCod = $retornotabela->getCategoria()->getCod();
+    $catTitulo = $retornotabela->getCategoria()->getTitulo();
+    $tipoCod = $retornotabela->getTipopagamento()->getCod();
+    $tipoNome = $retornotabela->getTipopagamento()->getTipo_titulo();
+    
+?>
+<div class="main-panel">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar bar1"></span>
+                    <span class="icon-bar bar2"></span>
+                    <span class="icon-bar bar3"></span>
+                </button>
+                <a class="navbar-brand" href="#">PAGE AGENDAMENTO</a>
+            </div>
+            <?php require_once './inc/header_top.php'; ?>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">              
+
+
+                <div class="col-lg-12 col-md-7">
+                    <div class="card">
+                        <div class="header">
+                            <h4 class="title">ATUALIZAR AGENDAMENTO</h4>
+                        </div>
+                        <div class="content">
+                            <form method="post">
+                                <div class="row">
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Nome</label>
+                                            <input type="text" name="nome" class="form-control border-input" required="" value="<?= $nome ?>">
+                                            <span class="msg-error msg-titulo"></span>
+                                        </div>
+                                    </div>  
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>E-mail</label>
+                                            <input type="email" name="email" class="form-control border-input" required="" value="<?= $email ?>">
+                                            <span class="msg-error msg-titulo"></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Nome da Especialidade</label>
+                                           
+                                            <select name="especialidade" id="especialidade" class="form-control border-input">
+                                                <option value="<?= $catCod; ?>"><?= $catTitulo; ?></option>
+                                                <?php
+                                                
+                                                $especialidade = new Categoria();
+                                                $especialidade = $categoriacontroller->ListarTodasCategorias(0, 100);
+                                               
+                                                if ($especialidade == null):
+                                                    echo '<option value="">Não existem categoria cadastradas</option>';
+                                                else:
+                                                foreach ($especialidade as $list):
+                                                    if($list->getTitulo() == $especialidadeTitulo):
+                                                        
+                                                  else:                                                   
+                                                    echo "<option value={$list->getCod()}>{$list->getTitulo()}</option>";
+                                                   endif;
+                                                endforeach;
+                                                    endif;
+                                                ?>                                             
+                                            </select>
+                                        </div>
+                                    </div>                                    
+                                                                        
+                                    
+                                    <div class="col-md-6">                                        
+                                        <div class="form-group">                                                
+                                            
+                                            <label>Forma de Pagamento</label>
+                                            <select name="pagamento" id="pagamento" class="form-control border-input">
+                                                <option value="<?= $tipoCod; ?>"><?= $tipoNome; ?></option>
+                                                <?php
+                                                $tipopagamento = new TipoPagamento();
+                                                $tipopagamento = $pagamentoController->ListarTipoPagamento(0, 50);                                              
+                                                if ($tipopagamento == null):
+                                                    echo '<option value="">Não existem Forma de pagamento</option>';
+                                                else:
+                                                foreach ($tipopagamento as $list): 
+                                                    if($list->getTipo_titulo() == $tipoNome):
+                                                        
+                                                        else:
+                                                     echo "<option value={$list->getCod()}>{$list->getTipo_titulo()}</option>";
+                                                        endif;
+                                                endforeach;
+                                                endif;
+                                                ?>
+
+                                            </select>
+                                        </div>
+                                    </div>     
+                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Telefone</label>
+                                            <input type="tel" name="telefone" class="form-control border-input" required="" value="<?= $telefone ?>">
+                                            <span class="msg-error msg-titulo"></span>
+                                        </div>
+                                    </div>                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Data</label>
+                                            <input type="date" name="data"  id="calendario" class="form-control border-input date" required="" value="<?= $data ?>">
+                                            <span class="msg-error msg-titulo"></span>
+                                        </div>
+                                    </div>                                    
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Hora</label>
+                                            <input type="time" name="hora" class="form-control border-input" required="" value="<?= $hora ?>">
+                                            <span class="msg-error msg-titulo"></span>
+                                        </div>
+                                    </div>                                    
+                                    
+                                </div>
+
+
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <?php echo $resultado; ?>
+                                    </div>                                    
+                                </div>   
+
+                                <div class="text-center">
+                                    <input type="submit" class="btn btn-success btn-fill btn-wd" name="btnAtualizar" value="Atualizar">                                    
+                                </div>
+                                <?php ?>
+                                <div class="clearfix"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+<?php
+endif;
+?>
+<script src="<?= INCLUDE_PATH; ?>/assets/js/jquery.js" type="text/javascript"></script>
+<script>
+
+</script>
+
+

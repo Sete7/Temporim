@@ -1,0 +1,249 @@
+<?php
+
+//IINSTACIA AS CLASSES
+$artigoController = new ArtigoController();
+$artigo = new Artigo();
+$helper = new Helper();
+$upload = new Upload();
+$resultado = "";
+
+//DELETAR PROJETO
+$del = filter_input(INPUT_GET, "del", FILTER_SANITIZE_NUMBER_INT);
+if ($del):
+    $artigo = $artigoController->retornaArtigoImagem($del);
+    echo $capa = "../upload/" . $artigo->getThumb();
+    if (file_exists($capa) && !is_dir($capa)):
+        unlink($capa);
+    endif;
+    if ($artigoController->Excluir($del)):
+        $resultado = "<div class=\"alert alert-success\">Projéto </b> removido com sucesso</div>";
+    else:
+        $resultado = "<div class=\"alert alert-danger\">Erro ao remover </div>";
+    endif;
+endif;
+/*
+ * Pegando o cod que esta vindo através da url active = 1
+ * o status vai receber o valor 2 = que é inativo
+ */
+$active = filter_input(INPUT_GET, "active", FILTER_SANITIZE_NUMBER_INT);
+if ($active):
+//retorna o slider 
+    $retornaStatus = $artigoController->retornaStatusArtigo($active);
+    $status = 2;
+    if ($artigoController->AlterarStatus($active, $status)):
+        echo '<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+                alert ("Projéto esta inativo!")
+                </SCRIPT>';
+    endif;
+
+endif;
+
+$inactive = filter_input(INPUT_GET, "inactive", FILTER_SANITIZE_NUMBER_INT);
+if ($inactive):
+//retorna o slider 
+    $retornaStatus = $artigoController->retornaStatusArtigo($inactive);
+    $status = 1;
+    if ($artigoController->AlterarStatus($inactive, $status)):
+        echo '<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+            alert ("Projéto ativado!")
+            </SCRIPT>';
+    endif;
+endif;
+
+//INICIO DE PAGINACAO
+if (empty($_GET['pg'])):
+else:
+    $pg = $_GET['pg'];
+endif;
+if (isset($pg)):
+    $pg = $_GET['pg'];
+else:
+    $pg = 1;
+endif;
+//máximo de links na paginação
+$maxlinks = 4;
+//quantidade de publicação por páginas
+$maximo = 5;
+//$inicio = (($maximo * $pagina) - $maximo);
+$inicio = ($pg * $maximo) - $maximo;
+$listarArtigo = $artigoController->listarArtigo($inicio, $maximo);
+?>
+<div class="main-panel">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar bar1"></span>
+                    <span class="icon-bar bar2"></span>
+                    <span class="icon-bar bar3"></span>
+                </button>
+                <a class="navbar-brand" href="?pagina=produto">PAGE BLOG</a>
+            </div>
+            <?php require_once './inc/header_top.php'; ?>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="header">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h4 class="title">Listagem de Artigos</h4>
+                                </div>
+                                <div class="col-md-8">
+                                    <form class="form-inline" method="post">
+                                        <div class="form-group">
+                                            <label>BUSCAR:</label>
+                                            <input type="text" name="txtBuscar" size="65" class="form-control border-input" placeholder="DIGITE TITULO OU RA E SELECIONE O TIPO">
+                                        </div>
+                                        <div class="form-group">                                        
+                                            <select name="slTipo" id="slTipo" class="form-control border-input">
+                                                <option value="1">Titulo</option>
+                                                <option value="2">CÓD</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-icon btn-info"><i class="fa fa-search" style="font-size:1.3em;"> </i>BUSCAR</button>
+                                    </form>
+                                </div>
+                            </div>                        
+                        </div>
+                        <hr>
+                        <?php
+                        $termo = filter_input(INPUT_POST, "txtBuscar", FILTER_SANITIZE_STRING);
+                        $tipo = filter_input(INPUT_POST, "slTipo", FILTER_SANITIZE_NUMBER_INT);
+                        if ($termo == null):
+                        ?>
+                        <div class="content table-responsive table-full-width">
+                            <table class="table table-striped">
+                                <thead>
+                                <th>Código</th>
+                                <th>Capa</th>
+                                <th>Autor</th>          
+                                <th>Titulo</th>          
+                                <th>Ações</th>
+                                <th>Status</th>  
+                                </thead>
+                                <tbody>
+                                    <?php
+//                                        LISTAR PROJETOS CADASTRADOS
+                                    if ($listarArtigo == null):
+                                        echo '<td colspan="8">Nesse momento não temos artigos cadastrado</td>';
+                                    else:
+                                        foreach ($listarArtigo as $artigo):
+                                            ?>
+                                            <tr>
+                                                <td><?= $artigo->getCod(); ?></td>
+                                                <td> <img src="../upload/<?= $artigo->getThumb(); ?>" width="100" alt=""/></td>
+                                                <td><?= $artigo->getAutor(); ?></td>                                                    
+                                                <td><?= $artigo->getTitulo(); ?></td>                                                    
+                                                <td>
+                                                    <a href="?pagina=editarArtigo&cod=<?= $artigo->getCod(); ?>" class="btn btn-icon btn-primary"><i class="ti-pencil-alt2"></i></a>
+                                                    <a href="?pagina=listarArtigo&del=<?= $artigo->getCod(); ?>" class="btn btn-icon btn-danger" onclick="return confirm('Deseja realmente excluir o projéto <?= $artigo->getTitulo(); ?>');"><i class="ti-close"></i></a>
+                                                </td>
+                                                <td>
+                                                    <?php
+                                                    if ($artigo->getStatus() == 1):
+                                                        echo "<a class='btn btn-primary' href='?pagina=listarArtigo&active={$artigo->getCod()}'><i class='ti-check'></i>";
+                                                    else:
+                                                        echo "<a class='btn btn-danger-outline' href='?pagina=listarArtigo&inactive={$artigo->getCod()}'><i class='ti-close'></i></a>";
+                                                    endif;
+                                                    ?>
+                                                </td>
+                                            </tr>
+                                            <?php
+                                        endforeach;
+                                    endif;
+                                    ?>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                    <!--======================================================PAGINACAO DA PAGINA =========================================================-->           
+
+                    <?php
+//                        RESULTADO DA PAGINAÇÃO
+                    $total = $artigoController->retornaQtdArtigo();
+                    $total_paginas = ceil($total / $maximo);
+                    if ($total > $maximo):
+                        echo '<div class="paginator">';
+                        echo '<ul class="pagination">';
+                        echo '<li><a href="dashboard.php?pagina=listarArtigo&pg=1">Primeira Página</a></li>';
+                        for ($i = $pg - $maxlinks; $i <= $pg - 1; $i++):
+                            if ($i >= 1):
+                                echo '<li><a href="dashboard.php?pagina=listarArtigo&pg=' . $i . '">' . $i . '</a><li>';
+                            endif;
+                        endfor;
+                        echo '<li><a class="active" href="dashboard.php?pagina=listarArtigo&pg=' . $pg . '">' . $pg . '</a></li>';
+                        for ($i = $pg + 1; $i <= $pg + $maxlinks; $i++):
+                            if ($i <= $total_paginas):
+                                echo '<li><a href="dashboard.php?pagina=listarArtigo&pg=' . $i . '">' . $i . '</a></li>';
+                            endif;
+                        endfor;
+                        echo '<li><a href="dashboard.php?pagina=listarArtigo&pg=' . $total_paginas . '"">Última Página</a></li>';
+                        echo '</ul>';
+                        echo '</div>';
+                    endif;
+                    ?>            
+
+                    <!--====================================================== FIM DA PAGINACAO DA PAGINA =========================================================-->
+                </div>
+
+                <?php
+                else:
+                $artigoBuscado = $artigoController->buscarArtigo($termo, $tipo);
+                ?>
+                <div class="content table-responsive table-full-width">
+                    <table class="table table-striped">
+                        <thead>
+                        <th>Código</th>
+                        <th>Capa</th>
+                        <th>Titulo</th>                 
+                        <th>Ações</th>                            
+                        <th>Status</th> 
+                        </thead>
+                        <tbody>
+                            <?php
+                            if ($artigoBuscado == null):
+                                echo '<td colspan="9">Nesse momento não temos projétos cadastrado</td>';
+                            else:
+                                foreach ($artigoBuscado as $artigo):
+                                    ?>
+                                    <tr>
+                                        <td><?= $artigo->getCod(); ?></td>
+                                        <td> <img src="../upload/<?= $artigo->getThumb(); ?>" width="100" alt=""/></td>
+                                        <td><?= $artigo->getTitulo(); ?></td>                                                    
+                                        <td>
+                                            <a href="?pagina=editarArtigo&cod=<?= $artigo->getCod(); ?>" class="btn btn-icon btn-primary"><i class="ti-pencil-alt2"></i></a>
+                                            <a href="?pagina=listarArtigo&del=<?= $artigo->getCod(); ?>" class="btn btn-icon btn-danger" onclick="return confirm('Deseja realmente excluir o artigo <?= $artigo->getTitulo(); ?>');"><i class="ti-close"></i></a>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            if ($artigo->getStatus() == 1):
+                                                echo "<a class='btn btn-primary' href='?pagina=listarArtigo&active={$artigo->getCod()}'><i class='ti-check'></i>";
+                                            else:
+                                                echo "<a class='btn btn-danger-outline' href='?pagina=listarArtigo&inactive={$artigo->getCod()}'><i class='ti-close'></i></a>";
+                                            endif;
+                                            ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                endforeach;
+                            endif;
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php
+            endif;
+            ?>
+
+        </div>
+    </div>
+</div>
+

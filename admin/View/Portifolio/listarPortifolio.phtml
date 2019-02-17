@@ -1,0 +1,244 @@
+<?php
+$portfolio = new Portifolio();
+$portfolioController = new PortfolioController();
+$helper = new Helper();
+$upload = new Upload();
+
+//DELETAR PROJETO
+$del = filter_input(INPUT_GET, "del", FILTER_SANITIZE_NUMBER_INT);
+if ($del):
+    $portfolio = $portfolioController->retornaPortfolioImagem($del);
+    echo $capa = "../upload/" . $portfolio->getThumb();
+    if (file_exists($capa) && !is_dir($capa)):
+        unlink($capa);
+    endif;
+    if ($portfolioController->Excluir($del)):
+        $resultado = "<div class=\"alert alert-success\">Projeto </b> removido com sucesso</div>";
+    else:
+        $resultado = "<div class=\"alert alert-danger\">Erro ao remover </div>";
+    endif;
+endif;
+/*
+ * Pegando o cod que esta vindo através da url active = 1
+ * o status vai receber o valor 2 = que é inativo
+ */
+$active = filter_input(INPUT_GET, "active", FILTER_SANITIZE_NUMBER_INT);
+if ($active):
+//retorna o slider 
+    $retornaStatus = $portfolioController->retornaStatusProjetos($active);
+    $status = 2;
+    if ($portfolioController->AlterarStatus($active, $status)):
+        echo '<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+                alert ("Projéto esta inativo!")
+                </SCRIPT>';
+    endif;
+
+endif;
+
+$inactive = filter_input(INPUT_GET, "inactive", FILTER_SANITIZE_NUMBER_INT);
+if ($inactive):
+//retorna o slider 
+    $retornaStatus = $portfolioController->retornaStatusProjetos($inactive);
+    $status = 1;
+    if ($portfolioController->AlterarStatus($inactive, $status)):
+        echo '<SCRIPT LANGUAGE="JavaScript" TYPE="text/javascript">
+            alert ("Projéto ativado!")
+            </SCRIPT>';
+    endif;
+endif;
+
+//INICIO DE PAGINACAO
+if (empty($_GET['pg'])):
+else:
+    $pg = $_GET['pg'];
+endif;
+if (isset($pg)):
+    $pg = $_GET['pg'];
+else:
+    $pg = 1;
+endif;
+//máximo de links na paginação
+$maxlinks = 4;
+//quantidade de publicação por páginas
+$maximo = 5;
+//$inicio = (($maximo * $pagina) - $maximo);
+$inicio = ($pg * $maximo) - $maximo;
+$listarPortfolio = $portfolioController->listarPortfolio($inicio, $maximo);
+?>
+<div class="main-panel">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar bar1"></span>
+                    <span class="icon-bar bar2"></span>
+                    <span class="icon-bar bar3"></span>
+                </button>
+                <a class="navbar-brand" href="?pagina=produto">PAGE PORTFÓLIO</a>
+            </div>
+            <?php require_once './inc/header_top.php'; ?>
+        </div>
+    </nav>
+
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="header">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h4 class="title">Listagem de Projetos</h4>
+                                </div>
+                                <div class="col-md-8">
+                                    <form class="form-inline" method="post">
+                                        <div class="form-group">
+                                            <label>BUSCAR:</label>
+                                            <input type="text" name="txtBuscar" size="65" class="form-control border-input" placeholder="DIGITE TITULO OU RA E SELECIONE O TIPO">
+                                        </div>
+                                        <div class="form-group">                                        
+                                            <select name="slTipo" id="slTipo" class="form-control border-input">
+                                                <option value="1">Titulo</option>
+                                                <option value="2">CÓD</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-icon btn-info"><i class="fa fa-search" style="font-size:1.3em;"> </i>BUSCAR</button>
+                                    </form>
+                                </div>
+                            </div>                        
+                        </div>
+                        <hr>
+                        <?php
+                        $termo = filter_input(INPUT_POST, "txtBuscar", FILTER_SANITIZE_STRING);
+                        $tipo = filter_input(INPUT_POST, "slTipo", FILTER_SANITIZE_NUMBER_INT);
+                        if ($termo == null):
+                        ?>
+                        <div class="content table-responsive table-full-width">
+                            <table class="table table-striped">
+                                <thead>
+                                <th>Código</th>
+                                <th>Capa</th>
+                                <th>Titulo</th>          
+                                <th>Ações</th>
+                                <th>Status</th>  
+                                </thead>
+                                <tbody>
+                                    <?php
+//                                        LISTAR PROJETOS CADASTRADOS
+                                    if ($listarPortfolio == null):
+                                        echo '<td colspan="8">Nesse momento não temos projetos cadastrado</td>';
+                                    else:
+                                        foreach ($listarPortfolio as $projetos):
+                                            ?>
+                                            <tr>
+                                                <td><?= $projetos->getCod(); ?></td>
+                                                <td> <img src="../upload/<?= $projetos->getThumb(); ?>" width="100" alt=""/></td>
+                                                <td><?= $projetos->getTitulo(); ?></td>                                                    
+                                                <td>
+                                                    <a href="?pagina=editarPortifolio&cod=<?= $projetos->getCod(); ?>" class="btn btn-icon btn-primary"><i class="ti-pencil-alt2"></i></a>
+                                                    <a href="?pagina=listarPortifolio&del=<?= $projetos->getCod(); ?>" class="btn btn-icon btn-danger" onclick="return confirm('Deseja realmente excluir o projéto <?= $projetos->getTitulo(); ?>');"><i class="ti-close"></i></a>
+                                                </td>
+                                                <td>
+                                                    <?php
+                                                    if ($projetos->getStatus() == 1):
+                                                        echo "<a class='btn btn-primary' href='?pagina=listarPortifolio&active={$projetos->getCod()}'><i class='ti-check'></i>";
+                                                    else:
+                                                        echo "<a class='btn btn-danger-outline' href='?pagina=listarPortifolio&inactive={$projetos->getCod()}'><i class='ti-close'></i></a>";
+                                                    endif;
+                                                    ?>
+                                                </td>
+                                            </tr>
+                                            <?php
+                                        endforeach;
+                                    endif;
+                                    ?>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                    <!--======================================================PAGINACAO DA PAGINA =========================================================-->           
+
+                    <?php
+//                        RESULTADO DA PAGINAÇÃO
+                    $total = $portfolioController->retornaQtdProjetos();
+                    $total_paginas = ceil($total / $maximo);
+                    if ($total > $maximo):
+                        echo '<div class="paginator">';
+                        echo '<ul class="pagination">';
+                        echo '<li><a href="dashboard.php?pagina=listarPortifolio&pg=1">Primeira Página</a></li>';
+                        for ($i = $pg - $maxlinks; $i <= $pg - 1; $i++):
+                            if ($i >= 1):
+                                echo '<li><a href="dashboard.php?pagina=listarPortifolio&pg=' . $i . '">' . $i . '</a><li>';
+                            endif;
+                        endfor;
+                        echo '<li><a class="active" href="dashboard.php?pagina=listarPortifolio&pg=' . $pg . '">' . $pg . '</a></li>';
+                        for ($i = $pg + 1; $i <= $pg + $maxlinks; $i++):
+                            if ($i <= $total_paginas):
+                                echo '<li><a href="dashboard.php?pagina=listarPortifolio&pg=' . $i . '">' . $i . '</a></li>';
+                            endif;
+                        endfor;
+                        echo '<li><a href="dashboard.php?pagina=listarPortifolio&pg=' . $total_paginas . '"">Última Página</a></li>';
+                        echo '</ul>';
+                        echo '</div>';
+                    endif;
+                    ?>            
+
+                    <!--====================================================== FIM DA PAGINACAO DA PAGINA =========================================================-->
+                </div>
+
+                <?php
+                else:
+                $projetoBuscado = $portfolioController->buscarProjeto($termo, $tipo);
+                ?>
+                <div class="content table-responsive table-full-width">
+                    <table class="table table-striped">
+                        <thead>
+                        <th>Código</th>
+                        <th>Capa</th>
+                        <th>Titulo</th>                 
+                        <th>Ações</th>                            
+                        <th>Status</th> 
+                        </thead>
+                        <tbody>
+                            <?php
+                            if ($projetoBuscado == null):
+                                echo '<td colspan="9">Nesse momento não temos projétos cadastrado</td>';
+                            else:
+                                foreach ($projetoBuscado as $projetos):
+                                    ?>
+                                    <tr>
+                                        <td><?= $projetos->getCod(); ?></td>
+                                        <td> <img src="../upload/<?= $projetos->getThumb(); ?>" width="100" alt=""/></td>
+                                        <td><?= $projetos->getTitulo(); ?></td>                                                    
+                                        <td>
+                                            <a href="?pagina=editarPortifolio&cod=<?= $projetos->getCod(); ?>" class="btn btn-icon btn-primary"><i class="ti-pencil-alt2"></i></a>
+                                            <a href="?pagina=listarPortifolio&del=<?= $projetos->getCod(); ?>" class="btn btn-icon btn-danger" onclick="return confirm('Deseja realmente excluir o projeto <?= $projetos->getTitulo(); ?>');"><i class="ti-close"></i></a>
+                                        </td>
+                                        <td>
+                                            <?php
+                                            if ($projetos->getStatus() == 1):
+                                                echo "<a class='btn btn-primary' href='?pagina=listarPortifolio&active={$projetos->getCod()}'><i class='ti-check'></i>";
+                                            else:
+                                                echo "<a class='btn btn-danger-outline' href='?pagina=listarPortifolio&inactive={$projetos->getCod()}'><i class='ti-close'></i></a>";
+                                            endif;
+                                            ?>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                endforeach;
+                            endif;
+                            ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <?php
+            endif;
+            ?>
+
+        </div>
+    </div>
+</div>
+

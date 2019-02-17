@@ -1,0 +1,180 @@
+<?php
+$categoria = new Categoria();
+$pagamento = new TipoPagamento();
+$agendamentocontroller = new AgendaController();
+$helper = new Helper();
+$resultado = "";
+
+//iniciando as paginação
+////iniciando as paginação
+if (empty($_GET['pg'])):
+else:
+    $pg = $_GET['pg'];
+endif;
+if (isset($pg)):
+    $pg = $_GET['pg'];
+else:
+    $pg = 1;
+endif;
+//DELETAR AGENDAMENTO
+$del = filter_input(INPUT_GET, "del", FILTER_SANITIZE_NUMBER_INT);
+if ($del):
+    if ($agendamentocontroller->Excluir($del)):
+        $resultado = "<div class=\"alert alert-success\">Agendamento </b> foi removido com sucesso</div>";
+    else:
+        $resultado = "<div class=\"alert alert-danger\">Erro ao remover </div>";
+    endif;
+endif;
+//QUANTIDADE DE AGENDAMENTO
+$quantidade = 30;
+$inicio = ($pg * $quantidade) - $quantidade;
+$listaragendamento = $agendamentocontroller->listarAgendamento($inicio, $quantidade)
+?>
+<div class="main-panel">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar bar1"></span>
+                    <span class="icon-bar bar2"></span>
+                    <span class="icon-bar bar3"></span>
+                </button>
+                <a class="navbar-brand" href="#">PAGE AGENDAMENTO</a>
+            </div>
+            <?php require_once './inc/header_top.php'; ?>
+        </div>
+    </nav>
+
+
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card  float bg-danger txt-center">
+                        <div class="header">
+                            <h4 class="title">LISTAR AGENDAMENTO</h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <form class="form-inline" method="post">
+
+                                </form>
+                            </div>
+                        </div>                        
+                        <div class="content table-responsive table-full-width">
+                            <table class="table table-striped table-responsive bg-danger text-success">
+                                <thead class="txt-center">
+                                <th>CÓDIGO</th>
+                                <th>PACIENTE</th>                                                                                  
+                                <th>TELEFONE</th>                           
+                                <th>DATA</th>
+                                <th>VIZUALIZAR</th>
+                                <th>ATUALIZAR</th>
+                                <th>EXCLUIR</th>                            
+                                </thead>
+                                <tbody class="txt-center">
+
+                                    <?php
+                                    if ($listaragendamento == null):
+                                        echo '<td colspan="8">Nesse momento não temos agendamento cadastrado</td>';
+                                    else:
+                                        foreach ($listaragendamento as $list):
+                                            ?>
+                                            <tr>
+                                                <td><?= $list->getAgenda_cod(); ?></td>
+                                                <td><?= $list->getAgenda_nome(); ?></td>
+                                                <td><?= $list->getAgenda_telefone(); ?></td>
+                                                <td><?= $list->getAgenda_data(); ?></td>
+                                                <td>
+                                                    <a href="?pagina=visualizarAgendamento&cod=<?= $list->getAgenda_cod(); ?>" class="btn btn-icon btn-primary"><span class="fa fa-eye"  aria-hidden="true"></span></a>                                                       
+                                                </td>
+                                                <td>
+                                                    <a href="?pagina=editarAgendamento&cod=<?= $list->getAgenda_cod(); ?>" class="btn btn-icon btn-primary"><i class="ti-pencil-alt2"></i></a>                                                       
+                                                </td>
+                                                <td>
+                                                    <a href="?pagina=listarAgendamento&del=<?= $list->getAgenda_cod(); ?>" class="btn btn-icon btn-danger" onclick="return confirm('Deseja realmente excluir a <?= $list->getAgenda_nome(); ?>');"><i class="ti-close"></i></a>
+                                                </td>
+                                                
+                                                <?php
+                                            endforeach;
+                                        endif;
+                                        ?>
+
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav aria-label="Page navigation">
+                <?php
+                $totalRegistros = $agendamentocontroller->RetornaQtdAgendamento();
+                $totalRegistros;
+                if ($totalRegistros <= $quantidade):
+
+                else:
+                    $paginas = ceil($totalRegistros / $quantidade);
+                    $links = 5;
+
+                    if (isset($i)):
+                    else:
+                        $i = '1';
+                    endif;
+                    ?>
+
+                    <style>
+    <?php
+    if (isset($_GET['pg'])):
+        $num_pg = $_GET['pg'];
+    endif;
+    ?>
+                        .pagination a.active<?php echo $num_pg; ?>{background-color: #68b3c8; color: #fff; }
+                    </style>
+                    <ul class="pagination">
+                        <li><a href="dashboard.php?pagina=listarAgendamento&pg=1" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>
+                        <?php
+                        if (isset($_GET['pg'])):
+                            $num_pg = $_GET['pg'];
+                        endif;
+
+                        for ($i = $pg - $links; $i <= $pg - 1; $i++):
+                            if ($i <= 0):
+                            else:
+                                ?>                            
+                                <li class="active<?= $i; ?>"><a href="dashboard.php?pagina=listarAgendamento&pg=<?= $i; ?>"><?= $i; ?> <span class="sr-only">(current)</span></a></li>
+                            <?php
+                            endif;
+                        endfor;
+                        ?>       
+                        <li><a class="active<?= $i; ?>" href="dashboard.php?pagina=listarAgendamento&pg=<?= $i; ?>"><?= $pg; ?></a></li>
+                        <?php
+                        for ($i = $pg + 1; $i <= $pg = $links; $i++):
+                            if ($i > $paginas):
+                            else:
+                                ?>
+                                <li><a class="active//<?= $i; ?>" href="dashboard.php?pagina=listarAgendamento&pg=<?= $i; ?>"><?= $i; ?></a></li>
+                                <?php
+                                endif;
+                            endfor;
+                            ?>                    
+                        <li>
+                            <a href="dashboard.php?pagina=listarAgendamento&pg=<?= $paginas; ?>" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                <?php
+                endif;
+                ?>
+
+            </nav>
+            <!--====================================================== FIM DA PAGINACAO DA PAGINA =========================================================-->
+        </div>
+
+    </div>
+
+</div>
